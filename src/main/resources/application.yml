@@ -100,5 +100,6 @@ knife4j:
         api-rule-resources:
           - com.shive.shiveoj.controller
 # 代码沙箱配置
-CodeSandbox:
+codesandbox:
   type: remote
+  url: https://code-sandbox-261556-9-1436389346.sh.run.tcloudbase.com/executeCode

@@ -8,16 +8,22 @@ import com.shive.shiveoj.exception.BusinessException;
 import com.shive.shiveoj.judge.codesandbox.CodeSandbox;
 import com.shive.shiveoj.judge.codesandbox.model.ExecuteCodeRequest;
 import com.shive.shiveoj.judge.codesandbox.model.ExecuteCodeResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 /**
  * 远程代码沙箱 (调用接口)
  */
+@Component
 public class RemoteCodeSandbox implements CodeSandbox {
+
+    @Value("${codesandbox.url:http://localhost:8090/executeCode}")
+    private String sandboxUrl;
 
     @Override
     public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) {
         System.out.println("远程代码沙箱");
-        String url = "http://localhost:8090/executeCode";
+        String url = sandboxUrl;
         String json = JSONUtil.toJsonStr(executeCodeRequest);
         String responseStr = HttpUtil.createPost(url)
                 .body(json)

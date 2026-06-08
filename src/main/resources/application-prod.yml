@@ -1,37 +1,34 @@
-# 线上配置文件
-# @author <a href="https://github.com/liyupi">程序员鱼皮</a>
-# @from <a href="https://yupi.icu">编程导航知识星球</a>
+# 线上配置文件（微信云托管）
 server:
-  port: 8101
+  address: 0.0.0.0
+  port: ${PORT:80}
+  servlet:
+    context-path: /api
+
 spring:
-  # 数据库配置
-  # todo 需替换配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/my_db
-    username: root
-    password: 123456
-  # Redis 配置
-  # todo 需替换配置
-  redis:
-    database: 1
-    host: localhost
-    port: 6379
-    timeout: 5000
-    password: 123456
-  # Elasticsearch 配置
-  # todo 需替换配置
-  elasticsearch:
-    uris: http://localhost:9200
-    username: root
-    password: 123456
+    # 云托管后端请用内网地址；本机调试可改为外网地址+端口
+    url: jdbc:mysql://${MYSQL_HOST:10.11.101.163}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:my_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:Root@321}
+  # 云托管初版可不启用 Redis，需要时再在控制台配置环境变量并取消注释
+#  redis:
+#    host: ${REDIS_HOST:127.0.0.1}
+#    port: ${REDIS_PORT:6379}
+#    password: ${REDIS_PASSWORD:}
+#    database: ${REDIS_DATABASE:0}
+#  elasticsearch:
+#    uris: ${ES_URIS:http://127.0.0.1:9200}
+
 mybatis-plus:
   configuration:
-    # 生产环境关闭日志
     log-impl: ''
-# 接口文档配置
+
 knife4j:
-  basic:
-    enable: true
-    username: root
-    password: 123456
+  enable: false
+
+# 远程代码沙箱（微信云托管公网地址，可通过环境变量覆盖）
+codesandbox:
+  type: ${CODESANDBOX_TYPE:remote}
+  url: ${CODESANDBOX_URL:https://code-sandbox-261556-9-1436389346.sh.run.tcloudbase.com/executeCode}

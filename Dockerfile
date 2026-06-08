@@ -1,15 +1,27 @@
-# Docker 镜像构建
-# @author <a href="https://github.com/liyupi">程序员鱼皮</a>
-# @from <a href="https://yupi.icu">编程导航知识星球</a>
-FROM maven:3.8.1-jdk-8-slim as builder
+# 微信云托管 Spring Boot 部署
+# 构建阶段
+FROM maven:3.8.1-jdk-8-slim AS build
 
-# Copy local code to the container image.
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 
-# Build a release artifact.
-RUN mvn package -DskipTests
+RUN mvn -B -DskipTests package
 
-# Run the web service on container startup.
-CMD ["java","-jar","/app/target/springboot-init-0.0.1-SNAPSHOT.jar","--spring.profiles.active=prod"]
+# 运行阶段
+FROM openjdk:8-jdk-alpine
+
+WORKDIR /app
+
+# mysql 客户端：INIT_DB=true 时可在容器启动阶段导入备份
+RUN apk add --no-cache mysql-client bash
+
+COPY --from=build /app/target/shiveoj-backend-0.0.1-SNAPSHOT.jar app.jar
+COPY sql ./sql
+COPY docker/entrypoint.sh ./docker/entrypoint.sh
+RUN chmod +x ./docker/entrypoint.sh
+
+# 监听端口须与云托管控制台「监听端口」一致
+EXPOSE 80
+
+ENTRYPOINT ["sh", "/app/docker/entrypoint.sh"]
