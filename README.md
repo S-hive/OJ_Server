@@ -5,7 +5,8 @@
 <img width="1844" height="1050" alt="image" src="https://github.com/user-attachments/assets/50980a4f-b6eb-4ffb-8d79-0b17232c22ec" />
 <img width="1844" height="1050" alt="image" src="https://github.com/user-attachments/assets/45ff2fbc-7707-494b-be87-0f6af265cc8d" />
 <img width="1844" height="1050" alt="image" src="https://github.com/user-attachments/assets/83732cd3-1ed3-4d7e-96c1-df9433a999e6" />
-![Uploading image.png…]()
+<img width="1863" height="1045" alt="image" src="https://github.com/user-attachments/assets/1bcd83b9-e64f-42b9-96d1-91bc4cae397d" />
+
 
 
 ## 功能特性
