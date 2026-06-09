@@ -1,10 +1,12 @@
 # HiveOJ Frontend
-基于 Spring Cloud 微服务 + MQ + Docker 的编程题目评测系统。系统能够根据管理员预设的题目用例对用户提交的代码进行执行和评测；系统中 [代码沙箱](https://github.com/S-hive/CodeSandbox) 可作为独立服务供其他开发者调用。
+基于 Spring Boot + MQ + Docker 的编程题目评测系统。系统能够根据管理员预设的题目用例对用户提交的代码进行执行和评测；系统中 [代码沙箱](https://github.com/S-hive/CodeSandbox) 可作为独立服务供其他开发者调用。
 
 ## 功能截图
 <img width="1844" height="1050" alt="image" src="https://github.com/user-attachments/assets/50980a4f-b6eb-4ffb-8d79-0b17232c22ec" />
 <img width="1844" height="1050" alt="image" src="https://github.com/user-attachments/assets/45ff2fbc-7707-494b-be87-0f6af265cc8d" />
 <img width="1844" height="1050" alt="image" src="https://github.com/user-attachments/assets/83732cd3-1ed3-4d7e-96c1-df9433a999e6" />
+![Uploading image.png…]()
+
 
 ## 功能特性
 - **题目浏览**：按标题、标签搜索题目，支持分页与通过率展示
