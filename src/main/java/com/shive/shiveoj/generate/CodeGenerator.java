@@ -121,7 +121,7 @@ public class CodeGenerator {
         Writer out = new FileWriter(outputPath);
         template.process(model, out);
 
-        // 生成文件后别忘了关闭哦
+        // 生成文件后关闭
         out.close();
     }
 }
