@@ -318,12 +318,9 @@ public class QuestionController {
     @PostMapping("/question_submit/list/page")
     public BaseResponse<Page<QuestionSubmitVO>> listQuestionSubmitByPage(@RequestBody QuestionSubmitQueryRequest questionSubmitQueryRequest,
                                                                          HttpServletRequest request) {
-        long current = questionSubmitQueryRequest.getCurrent();
-        long size = questionSubmitQueryRequest.getPageSize();
-        Page<QuestionSubmit> questionSubmitPages = questionSubmitService.page(new Page<>(current, size),
-                questionSubmitService.getQueryWrapper(questionSubmitQueryRequest));
         final User loginUser = userService.getLoginUser(request);
-        return ResultUtils.success(questionSubmitService.getQuestionSubmitVOPage(questionSubmitPages, loginUser));
+        return ResultUtils.success(
+                questionSubmitService.listQuestionSubmitVOByPage(questionSubmitQueryRequest, loginUser));
     }
 
 }

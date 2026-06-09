@@ -1,6 +1,7 @@
 package com.shive.shiveoj.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -8,12 +9,14 @@ import com.shive.shiveoj.common.ErrorCode;
 import com.shive.shiveoj.constant.CommonConstant;
 import com.shive.shiveoj.exception.BusinessException;
 import com.shive.shiveoj.judge.JudgeService;
+import com.shive.shiveoj.judge.codesandbox.model.JudgeInfo;
 import com.shive.shiveoj.mapper.QuestionSubmitMapper;
 import com.shive.shiveoj.model.dto.questionSubmit.QuestionSubmitAddRequest;
 import com.shive.shiveoj.model.dto.questionSubmit.QuestionSubmitQueryRequest;
 import com.shive.shiveoj.model.entity.Question;
 import com.shive.shiveoj.model.entity.QuestionSubmit;
 import com.shive.shiveoj.model.entity.User;
+import com.shive.shiveoj.model.enums.JudgeInfoMessageEnum;
 import com.shive.shiveoj.model.enums.QuestionSubmitLanguageEnum;
 import com.shive.shiveoj.model.enums.QuestionSubmitStatusEnum;
 import com.shive.shiveoj.model.vo.QuestionSubmitVO;
@@ -22,15 +25,20 @@ import com.shive.shiveoj.service.QuestionSubmitService;
 import com.shive.shiveoj.service.UserService;
 import com.shive.shiveoj.utils.SqlUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -39,6 +47,7 @@ import java.util.stream.Collectors;
  * @createDate 2026-05-04 21:40:44
  */
 @Service
+@Slf4j
 public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper, QuestionSubmit>
         implements QuestionSubmitService {
 
@@ -94,7 +103,18 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         Long questionSubmitId = questionSubmit.getId();
         // 执行判题服务
         CompletableFuture.runAsync(() -> {
-            judgeService.doJudge(questionSubmitId);
+            try {
+                judgeService.doJudge(questionSubmitId);
+            } catch (Exception e) {
+                log.error("判题失败, questionSubmitId={}", questionSubmitId, e);
+                QuestionSubmit failedSubmit = new QuestionSubmit();
+                failedSubmit.setId(questionSubmitId);
+                failedSubmit.setStatus(QuestionSubmitStatusEnum.FAILED.getValue());
+                JudgeInfo judgeInfo = new JudgeInfo();
+                judgeInfo.setMessage(JudgeInfoMessageEnum.SYSTEM_ERROR.getValue());
+                failedSubmit.setJudgeInfo(JSONUtil.toJsonStr(judgeInfo));
+                this.updateById(failedSubmit);
+            }
         });
         return questionSubmitId;
     }
@@ -107,6 +127,12 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
      */
     @Override
     public QueryWrapper<QuestionSubmit> getQueryWrapper(QuestionSubmitQueryRequest questionSubmitQueryRequest) {
+        return getQueryWrapper(questionSubmitQueryRequest, null);
+    }
+
+    @Override
+    public QueryWrapper<QuestionSubmit> getQueryWrapper(QuestionSubmitQueryRequest questionSubmitQueryRequest,
+                                                        User loginUser) {
         QueryWrapper<QuestionSubmit> queryWrapper = new QueryWrapper<>();
         if (questionSubmitQueryRequest == null) {
             return queryWrapper;
@@ -119,13 +145,35 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         String sortOrder = questionSubmitQueryRequest.getSortOrder();
 
         // 拼接查询条件
-        queryWrapper.eq(ObjectUtils.isNotEmpty(language), "language", language);
-        queryWrapper.eq(ObjectUtils.isNotEmpty(questionId), "questionId", questionId);
-        queryWrapper.eq(ObjectUtils.isNotEmpty(userId), "userId", userId);
+        queryWrapper.eq(StringUtils.isNotBlank(language), "language", language);
+        queryWrapper.eq(questionId != null && questionId > 0, "questionId", questionId);
+        // 普通用户强制只能查自己的提交
+        if (loginUser != null && !userService.isAdmin(loginUser)) {
+            queryWrapper.eq("userId", loginUser.getId());
+        } else if (userId != null && userId > 0) {
+            queryWrapper.eq("userId", userId);
+        }
         queryWrapper.eq(QuestionSubmitStatusEnum.getEnumByValue(status) != null, "status", status);
-        queryWrapper.orderBy(SqlUtils.validSortField(sortField), sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
-                sortField);
+        boolean sortAsc = CommonConstant.SORT_ORDER_ASC.equals(sortOrder);
+        queryWrapper.orderBy(SqlUtils.validSortField(sortField), sortAsc, sortField);
         return queryWrapper;
+    }
+
+    @Override
+    public Page<QuestionSubmitVO> listQuestionSubmitVOByPage(QuestionSubmitQueryRequest questionSubmitQueryRequest,
+                                                             User loginUser) {
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        // 普通用户强制只能查自己的提交；管理员可查看全部（也可按 userId 筛选）
+        if (!userService.isAdmin(loginUser)) {
+            questionSubmitQueryRequest.setUserId(loginUser.getId());
+        }
+        long current = questionSubmitQueryRequest.getCurrent();
+        long size = questionSubmitQueryRequest.getPageSize();
+        Page<QuestionSubmit> questionSubmitPage = this.page(new Page<>(current, size),
+                getQueryWrapper(questionSubmitQueryRequest, loginUser));
+        return getQuestionSubmitVOPage(questionSubmitPage, loginUser);
     }
 
 
@@ -135,7 +183,7 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         // 脱敏
         Long userId = loginUser.getId();
         // 处理脱敏
-        if (!Objects.equals(userId, questionSubmit.getUserId()) || !userService.isAdmin(loginUser)) {
+        if (!userService.isAdmin(loginUser) && !Objects.equals(userId, questionSubmit.getUserId())) {
             questionSubmitVO.setCode(null);
         }
         return questionSubmitVO;
@@ -168,9 +216,26 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
             questionSubmitVO.setUserVO(userService.getUserVO(user));
             return questionSubmitVO;
         }).collect(Collectors.toList());*/
+        Set<Long> questionIdSet = questionSubmitList.stream()
+                .map(QuestionSubmit::getQuestionId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, Question> questionMap = questionService.listByIds(questionIdSet).stream()
+                .collect(Collectors.toMap(Question::getId, Function.identity(), (a, b) -> a));
         List<QuestionSubmitVO> questionSubmitVOList = questionSubmitList.stream().map(questionSubmit -> {
-            return getQuestionSubmitVO(questionSubmit, loginUser);
+            QuestionSubmitVO questionSubmitVO = getQuestionSubmitVO(questionSubmit, loginUser);
+            Question question = questionMap.get(questionSubmit.getQuestionId());
+            if (question != null) {
+                questionSubmitVO.setQuestionTitle(question.getTitle());
+            }
+            return questionSubmitVO;
         }).collect(Collectors.toList());
+        if (!userService.isAdmin(loginUser)) {
+            Long loginUserId = loginUser.getId();
+            questionSubmitVOList = questionSubmitVOList.stream()
+                    .filter(vo -> Objects.equals(vo.getUserId(), loginUserId))
+                    .collect(Collectors.toList());
+        }
         questionSubmitVOPage.setRecords(questionSubmitVOList);
         return questionSubmitVOPage;
     }

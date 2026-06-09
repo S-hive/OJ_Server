@@ -19,7 +19,8 @@ RUN apk add --no-cache mysql-client bash
 COPY --from=build /app/target/shiveoj-backend-0.0.1-SNAPSHOT.jar app.jar
 COPY sql ./sql
 COPY docker/entrypoint.sh ./docker/entrypoint.sh
-RUN chmod +x ./docker/entrypoint.sh
+# 构建时强制去除 Windows CRLF，避免 set -e\r 报错
+RUN sed -i 's/\r$//' ./docker/entrypoint.sh && chmod +x ./docker/entrypoint.sh
 
 # 监听端口须与云托管控制台「监听端口」一致
 EXPOSE 80

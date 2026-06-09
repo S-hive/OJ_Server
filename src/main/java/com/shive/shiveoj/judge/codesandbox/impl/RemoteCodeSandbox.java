@@ -3,8 +3,6 @@ package com.shive.shiveoj.judge.codesandbox.impl;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
-import com.shive.shiveoj.common.ErrorCode;
-import com.shive.shiveoj.exception.BusinessException;
 import com.shive.shiveoj.judge.codesandbox.CodeSandbox;
 import com.shive.shiveoj.judge.codesandbox.model.ExecuteCodeRequest;
 import com.shive.shiveoj.judge.codesandbox.model.ExecuteCodeResponse;
@@ -25,15 +23,28 @@ public class RemoteCodeSandbox implements CodeSandbox {
         System.out.println("远程代码沙箱");
         String url = sandboxUrl;
         String json = JSONUtil.toJsonStr(executeCodeRequest);
-        String responseStr = HttpUtil.createPost(url)
-                .body(json)
-                .execute()
-                .body();
-        if (StringUtils.isBlank(responseStr)) {
-            throw new BusinessException(ErrorCode.API_REQUEST_ERROR,
-                    "executeCode remoteSandbox error, message = " + responseStr);
+        try {
+            String responseStr = HttpUtil.createPost(url)
+                    .body(json)
+                    .execute()
+                    .body();
+            if (StringUtils.isBlank(responseStr) || !responseStr.trim().startsWith("{")) {
+                return buildErrorResponse("沙箱无响应，请确认 code-sandbox 已启动");
+            }
+            ExecuteCodeResponse response = JSONUtil.toBean(responseStr, ExecuteCodeResponse.class);
+            if (response == null) {
+                return buildErrorResponse("沙箱响应解析失败");
+            }
+            return response;
+        } catch (Exception e) {
+            return buildErrorResponse("沙箱调用失败: " + e.getMessage());
         }
-        return JSONUtil.toBean(responseStr, ExecuteCodeResponse.class);
+    }
 
+    private ExecuteCodeResponse buildErrorResponse(String message) {
+        ExecuteCodeResponse response = new ExecuteCodeResponse();
+        response.setStatus(2);
+        response.setMessage(message);
+        return response;
     }
 }

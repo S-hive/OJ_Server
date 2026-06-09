@@ -46,6 +46,11 @@ public class QuestionSubmitVO {
     private Long questionId;
 
     /**
+     * 题目标题
+     */
+    private String questionTitle;
+
+    /**
      * 创建用户 id
      */
     private Long userId;

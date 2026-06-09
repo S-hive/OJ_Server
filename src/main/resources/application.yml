@@ -99,7 +99,4 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.shive.shiveoj.controller
-# 代码沙箱配置
-codesandbox:
-  type: remote
-  url: https://code-sandbox-261556-9-1436389346.sh.run.tcloudbase.com/executeCode
+# 代码沙箱：dev 见 application-dev.yml（本地 8090），prod 见 application-prod.yml（云沙箱）

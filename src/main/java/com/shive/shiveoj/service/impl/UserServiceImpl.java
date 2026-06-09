@@ -2,6 +2,8 @@ package com.shive.shiveoj.service.impl;
 
 import static com.shive.shiveoj.constant.UserConstant.USER_LOGIN_STATE;
 
+import com.shive.shiveoj.constant.UserConstant;
+
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -70,6 +72,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             User user = new User();
             user.setUserAccount(userAccount);
             user.setUserPassword(encryptPassword);
+            user.setUserName(userAccount);
+            user.setUserRole(UserRoleEnum.USER.getValue());
             boolean saveResult = this.save(user);
             if (!saveResult) {
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败，数据库错误");
@@ -159,6 +163,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
+        // 同步 session，确保角色等字段与数据库一致
+        request.getSession().setAttribute(USER_LOGIN_STATE, currentUser);
         return currentUser;
     }
 
@@ -197,7 +203,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public boolean isAdmin(User user) {
-        return user != null && UserRoleEnum.ADMIN.getValue().equals(user.getUserRole());
+        if (user == null || StringUtils.isBlank(user.getUserRole())) {
+            return false;
+        }
+        String role = user.getUserRole().trim();
+        return UserConstant.ADMIN_ROLE.equals(role);
     }
 
     /**
@@ -222,6 +232,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         LoginUserVO loginUserVO = new LoginUserVO();
         BeanUtils.copyProperties(user, loginUserVO);
+        if (StringUtils.isBlank(loginUserVO.getUserName())) {
+            loginUserVO.setUserName(user.getUserAccount());
+        }
         return loginUserVO;
     }
 

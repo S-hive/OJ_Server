@@ -12,12 +12,13 @@ import java.util.stream.Collectors;
 public enum QuestionSubmitStatusEnum {
 
     /**
-     * 0 - 待判题、1 - 判题中、2 - 成功、3 - 失败
+     * 0 - 待判题、1 - 判题中、2 - 判题完成、3 - 判题失败（系统异常）
+     * 具体对错见 judgeInfo.message（Accepted / Wrong Answer 等）
      */
     WAITING("等待中", 0),
     RUNNING("判题中", 1),
-    SUCCEED("成功", 2),
-    FAILED("失败", 3);
+    SUCCEED("判题完成", 2),
+    FAILED("判题失败", 3);
 
     private final String text;
 

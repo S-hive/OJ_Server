@@ -7,6 +7,7 @@ import com.shive.shiveoj.judge.codesandbox.model.JudgeInfo;
 import com.shive.shiveoj.model.entity.Question;
 import com.shive.shiveoj.model.enums.JudgeInfoMessageEnum;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -16,8 +17,14 @@ public class DefaultJudgeStrategy implements JudgeStrategy {
     @Override
     public JudgeInfo doJudge(JudgeContext judgeContext) {
         JudgeInfo judgeInfo = judgeContext.getJudgeInfo();
+        if (judgeInfo == null) {
+            judgeInfo = new JudgeInfo();
+        }
         List<String> inputList = judgeContext.getInputList();
         List<String> outputList = judgeContext.getOutputList();
+        if (outputList == null) {
+            outputList = new ArrayList<>();
+        }
         Question question = judgeContext.getQuestion();
         List<JudgeCase> judgeCaseList = judgeContext.getJudgeCaseList();
         JudgeInfoMessageEnum judgeInfoMessageEnum = JudgeInfoMessageEnum.ACCEPTED;
@@ -46,12 +53,12 @@ public class DefaultJudgeStrategy implements JudgeStrategy {
         JudgeConfig judgeConfig = JSONUtil.toBean(judgeConfigStr, JudgeConfig.class);
         Long needMemoryLimit = judgeConfig.getMemoryLimit();
         Long needTimeLimit = judgeConfig.getTimeLimit();
-        if (memory > needMemoryLimit) {
+        if (memory != null && memory > needMemoryLimit) {
             judgeInfoMessageEnum = JudgeInfoMessageEnum.MEMORY_LIMIT_EXCEEDED;
             judgeInfoResponse.setMessage(judgeInfoMessageEnum.getValue());
             return judgeInfoResponse;
         }
-        if (time > needTimeLimit) {
+        if (time != null && time > needTimeLimit) {
             judgeInfoMessageEnum = JudgeInfoMessageEnum.TIME_LIMIT_EXCEEDED;
             judgeInfoResponse.setMessage(judgeInfoMessageEnum.getValue());
             return judgeInfoResponse;
