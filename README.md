@@ -49,6 +49,7 @@
 
 - Node.js >= 14
 - npm >= 6
+- [前端](https://github.com/S-hive/OJ_Frontend)
 
 ### 安装依赖
 
