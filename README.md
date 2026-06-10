@@ -24,7 +24,7 @@
 
 ## 技术选型
 
-本项目采用前后端分离架构，基于 Spring Cloud Alibaba 微服务与 Vue3 生态构建。
+本项目采用前后端分离架构，基于 Spring Boot 与 Vue3 生态构建。
 
 ### 前端
 
@@ -34,7 +34,6 @@
 
 ### 后端
 
-- **微服务架构**：Spring Cloud Alibaba (Nacos + Gateway + OpenFeign)
 - **数据存储**：MySQL + Redis (分布式 Session)
 - **消息队列**：RabbitMQ (异步解耦评测任务)
 - **核心亮点**：
